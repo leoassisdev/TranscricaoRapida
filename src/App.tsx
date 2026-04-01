@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { TranscriptionResult, AppView } from './lib/types';
-import { getAvailableModels, transcribe } from './lib/tauri-bridge';
+import { checkFfmpeg, getAvailableModels, transcribe } from './lib/tauri-bridge';
+import { FfmpegSetup } from './components/FfmpegSetup';
 import { ModelManager } from './components/ModelManager';
 import { DropZone } from './components/DropZone';
 import { ProgressView } from './components/ProgressView';
@@ -13,8 +14,20 @@ export default function App() {
   const [result, setResult] = useState<TranscriptionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if any model is downloaded on mount
+  // Check FFmpeg and models on mount
   useEffect(() => {
+    checkFfmpeg()
+      .then((hasFfmpeg) => {
+        if (!hasFfmpeg) {
+          setView('ffmpeg-setup');
+        } else {
+          checkModels();
+        }
+      })
+      .catch(() => setView('ffmpeg-setup'));
+  }, []);
+
+  function checkModels() {
     getAvailableModels()
       .then((models) => {
         const downloaded = models.find((m) => m.downloaded);
@@ -26,6 +39,10 @@ export default function App() {
         }
       })
       .catch(() => setView('model-setup'));
+  }
+
+  const handleFfmpegReady = useCallback(() => {
+    checkModels();
   }, []);
 
   const handleModelReady = useCallback((name: string) => {
@@ -90,6 +107,10 @@ export default function App() {
           <div className="flex items-center justify-center h-full">
             <p style={{ color: 'var(--text-secondary)' }}>Carregando...</p>
           </div>
+        )}
+
+        {view === 'ffmpeg-setup' && (
+          <FfmpegSetup onReady={handleFfmpegReady} />
         )}
 
         {view === 'model-setup' && (

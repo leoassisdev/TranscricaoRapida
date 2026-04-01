@@ -25,7 +25,7 @@ pub async fn transcribe(
         },
     );
 
-    let wav_path = audio::prepare_audio(&file_path, &app_data_dir)?;
+    let wav_path = audio::prepare_audio(&file_path, &app_data_dir, &app)?;
 
     // Stage 2: Load model and transcribe
     let _ = app.emit(

@@ -1,9 +1,15 @@
+use super::ffmpeg;
 use std::path::PathBuf;
 use std::process::Command;
+use tauri::AppHandle;
 
 /// Converts any audio/video file to 16kHz mono WAV using FFmpeg.
 /// Returns the path to the generated WAV file.
-pub fn prepare_audio(file_path: &str, app_data_dir: &PathBuf) -> Result<String, String> {
+pub fn prepare_audio(
+    file_path: &str,
+    app_data_dir: &PathBuf,
+    app: &AppHandle,
+) -> Result<String, String> {
     let tmp_dir = app_data_dir.join("tmp");
     std::fs::create_dir_all(&tmp_dir)
         .map_err(|e| format!("Falha ao criar diretório temporário: {}", e))?;
@@ -12,19 +18,22 @@ pub fn prepare_audio(file_path: &str, app_data_dir: &PathBuf) -> Result<String, 
     let output_path = tmp_dir.join(&output_name);
     let output_str = output_path.to_string_lossy().to_string();
 
-    // Try common FFmpeg locations
-    let ffmpeg = find_ffmpeg().ok_or_else(|| {
-        "FFmpeg não encontrado. Instale com: brew install ffmpeg".to_string()
+    let ffmpeg_path = ffmpeg::find_ffmpeg(app).ok_or_else(|| {
+        "FFmpeg não encontrado. Reinicie o app para instalar automaticamente.".to_string()
     })?;
 
-    let result = Command::new(&ffmpeg)
+    let result = Command::new(&ffmpeg_path)
         .args([
             "-y",
-            "-i", file_path,
+            "-i",
+            file_path,
             "-vn",
-            "-acodec", "pcm_s16le",
-            "-ar", "16000",
-            "-ac", "1",
+            "-acodec",
+            "pcm_s16le",
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
             &output_str,
         ])
         .output()
@@ -36,21 +45,6 @@ pub fn prepare_audio(file_path: &str, app_data_dir: &PathBuf) -> Result<String, 
     }
 
     Ok(output_str)
-}
-
-fn find_ffmpeg() -> Option<String> {
-    let candidates = [
-        "/opt/homebrew/bin/ffmpeg",
-        "/usr/local/bin/ffmpeg",
-        "/usr/bin/ffmpeg",
-        "ffmpeg",
-    ];
-    for candidate in candidates {
-        if Command::new(candidate).arg("-version").output().is_ok() {
-            return Some(candidate.to_string());
-        }
-    }
-    None
 }
 
 /// Clean up temporary WAV files

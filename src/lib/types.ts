@@ -30,4 +30,4 @@ export interface DownloadProgress {
   percent: number;
 }
 
-export type AppView = 'checking' | 'model-setup' | 'idle' | 'processing' | 'result';
+export type AppView = 'checking' | 'ffmpeg-setup' | 'model-setup' | 'idle' | 'processing' | 'result';

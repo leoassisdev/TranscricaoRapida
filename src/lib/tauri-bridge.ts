@@ -66,6 +66,22 @@ export function onModelDownloadProgress(
   });
 }
 
+export async function checkFfmpeg(): Promise<boolean> {
+  return invoke<boolean>('check_ffmpeg');
+}
+
+export async function installFfmpeg(): Promise<string> {
+  return invoke<string>('install_ffmpeg');
+}
+
+export function onFfmpegInstallProgress(
+  cb: (payload: ProgressPayload) => void,
+): Promise<UnlistenFn> {
+  return listen<ProgressPayload>('ffmpeg-install-progress', (event) => {
+    cb(event.payload);
+  });
+}
+
 export async function copyToClipboard(text: string): Promise<void> {
   await writeText(text);
 }
