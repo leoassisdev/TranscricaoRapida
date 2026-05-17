@@ -11,8 +11,10 @@ import type {
 
 const MEDIA_EXTENSIONS = [
   'mp3', 'wav', 'm4a', 'flac', 'ogg', 'aac',
-  'mp4', 'mov', 'webm', 'mkv', 'avi', 'm4v',
+  'mp4', 'mov', 'webm', 'mkv', 'avi', 'm4v', 'ts',
 ];
+
+export { MEDIA_EXTENSIONS };
 
 export async function pickFile(): Promise<{ path: string; name: string } | null> {
   const selected = await open({
@@ -30,11 +32,13 @@ export async function transcribe(
   filePath: string,
   language: string,
   modelName: string,
+  outputLanguage: string,
 ): Promise<TranscriptionResult> {
   return invoke<TranscriptionResult>('transcribe', {
     filePath,
     language,
     modelName,
+    outputLanguage,
   });
 }
 

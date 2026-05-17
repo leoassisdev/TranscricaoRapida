@@ -9,6 +9,7 @@ pub async fn transcribe(
     file_path: String,
     language: String,
     model_name: String,
+    output_language: String,
 ) -> Result<TranscriptionResult, String> {
     let app_data_dir = app
         .path()
@@ -47,9 +48,10 @@ pub async fn transcribe(
 
     let model_path_str = model_path.to_string_lossy().to_string();
     let lang = language.clone();
+    let out_lang = output_language.clone();
 
     let result = tokio::task::spawn_blocking(move || {
-        run_whisper(&model_path_str, &wav_path, &lang, &app)
+        run_whisper(&model_path_str, &wav_path, &lang, &out_lang, &app)
     })
     .await
     .map_err(|e| format!("Erro na task: {}", e))??;
@@ -64,6 +66,7 @@ fn run_whisper(
     model_path: &str,
     wav_path: &str,
     language: &str,
+    output_language: &str,
     app: &AppHandle,
 ) -> Result<TranscriptionResult, String> {
     // Load audio
@@ -88,6 +91,31 @@ fn run_whisper(
         params.set_language(Some("auto"));
     } else {
         params.set_language(Some(language));
+    }
+
+    // Enable translation when output language differs from source
+    if output_language != "original" {
+        // Whisper natively supports translation to English
+        // For English output, use built-in translate mode
+        if output_language == "en" {
+            params.set_translate(true);
+        } else {
+            // For other target languages, set translate to get English first
+            // then set the target language hint via initial prompt
+            params.set_translate(true);
+            let lang_name = match output_language {
+                "pt" => "Brazilian Portuguese",
+                "es" => "Spanish",
+                "fr" => "French",
+                "de" => "German",
+                "it" => "Italian",
+                "ja" => "Japanese",
+                "ko" => "Korean",
+                "zh" => "Chinese",
+                _ => "English",
+            };
+            params.set_initial_prompt(&format!("Translate to {}.", lang_name));
+        }
     }
 
     params.set_print_progress(false);

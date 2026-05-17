@@ -51,12 +51,12 @@ export default function App() {
   }, []);
 
   const handleFileSelected = useCallback(
-    async (filePath: string, name: string, language: string) => {
+    async (filePath: string, name: string, language: string, outputLanguage: string) => {
       setFileName(name);
       setError(null);
       setView('processing');
       try {
-        const res = await transcribe(filePath, language, modelName);
+        const res = await transcribe(filePath, language, modelName, outputLanguage);
         setResult(res);
         setView('result');
       } catch (e) {
