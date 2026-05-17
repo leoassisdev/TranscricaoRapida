@@ -16,16 +16,21 @@ const MEDIA_EXTENSIONS = [
 
 export { MEDIA_EXTENSIONS };
 
-export async function pickFile(): Promise<{ path: string; name: string } | null> {
+export async function pickFiles(): Promise<{ path: string; name: string }[] | null> {
   const selected = await open({
-    title: 'Selecionar áudio ou vídeo',
-    multiple: false,
+    title: 'Selecionar áudios ou vídeos',
+    multiple: true,
     filters: [
       { name: 'Mídia', extensions: MEDIA_EXTENSIONS },
     ],
   });
-  if (!selected || typeof selected !== 'string') return null;
-  return { path: selected, name: selected.split('/').pop() ?? selected };
+  if (!selected) return null;
+  const paths = Array.isArray(selected) ? selected : [selected];
+  if (paths.length === 0) return null;
+  return paths.map((p) => ({
+    path: p,
+    name: p.split('/').pop() ?? p,
+  }));
 }
 
 export async function transcribe(
@@ -103,4 +108,17 @@ export async function saveFile(
   });
   if (!path) return;
   await invoke('write_file', { path, content });
+}
+
+export async function exportZip(
+  entries: { name: string; content: string }[],
+  defaultName: string,
+): Promise<void> {
+  const path = await save({
+    title: 'Exportar todas as transcrições',
+    defaultPath: defaultName,
+    filters: [{ name: 'ZIP', extensions: ['zip'] }],
+  });
+  if (!path) return;
+  await invoke('export_zip', { entries, outputPath: path });
 }

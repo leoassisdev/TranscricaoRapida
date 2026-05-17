@@ -1,5 +1,5 @@
 use crate::commands::audio;
-use crate::types::{ProgressPayload, TranscriptionResult, TranscriptionSegment};
+use crate::types::{ProgressPayload, TranscriptionResult, TranscriptionSegment, ZipEntry};
 use tauri::{AppHandle, Emitter, Manager};
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
@@ -216,4 +216,32 @@ fn load_wav_f32(path: &str) -> Result<Vec<f32>, String> {
 #[tauri::command]
 pub fn write_file(path: String, content: String) -> Result<(), String> {
     std::fs::write(&path, &content).map_err(|e| format!("Falha ao escrever arquivo: {}", e))
+}
+
+#[tauri::command]
+pub async fn export_zip(entries: Vec<ZipEntry>, output_path: String) -> Result<(), String> {
+    use std::io::Write;
+    use zip::write::SimpleFileOptions;
+    use zip::ZipWriter;
+
+    let file = std::fs::File::create(&output_path)
+        .map_err(|e| format!("Falha ao criar arquivo: {}", e))?;
+    let mut zip_writer = ZipWriter::new(file);
+    let options = SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
+
+    for entry in entries {
+        zip_writer
+            .start_file(&entry.name, options)
+            .map_err(|e| format!("Erro no zip: {}", e))?;
+        zip_writer
+            .write_all(entry.content.as_bytes())
+            .map_err(|e| format!("Erro ao escrever: {}", e))?;
+    }
+
+    zip_writer
+        .finish()
+        .map_err(|e| format!("Erro ao finalizar zip: {}", e))?;
+
+    Ok(())
 }

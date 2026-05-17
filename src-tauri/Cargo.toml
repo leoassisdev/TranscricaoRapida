@@ -24,3 +24,4 @@ tokio = { version = "1", features = ["fs", "rt", "sync"] }
 futures-util = "0.3"
 hound = "3.5"
 uuid = { version = "1", features = ["v4"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }

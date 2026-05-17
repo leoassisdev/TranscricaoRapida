@@ -14,6 +14,7 @@ pub fn run() {
             commands::model::download_model,
             commands::transcribe::transcribe,
             commands::transcribe::write_file,
+            commands::transcribe::export_zip,
         ])
         .run(tauri::generate_context!())
         .expect("error while running TranscricaoRapida");

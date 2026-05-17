@@ -11,6 +11,19 @@ export interface TranscriptionResult {
   duration_ms: number;
 }
 
+export interface TranscriptionJob {
+  id: string;
+  filePath: string;
+  fileName: string;
+  language: string;
+  outputLanguage: string;
+  status: 'queued' | 'processing' | 'done' | 'error';
+  progress: number;
+  progressMessage: string;
+  result: TranscriptionResult | null;
+  error: string | null;
+}
+
 export interface ProgressPayload {
   stage: string;
   progress: number;
@@ -30,4 +43,4 @@ export interface DownloadProgress {
   percent: number;
 }
 
-export type AppView = 'checking' | 'ffmpeg-setup' | 'model-setup' | 'idle' | 'processing' | 'result';
+export type AppView = 'checking' | 'ffmpeg-setup' | 'model-setup' | 'idle' | 'batch';

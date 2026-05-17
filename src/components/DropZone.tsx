@@ -1,25 +1,33 @@
 import { useState, useCallback, useEffect } from 'react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { pickFile, MEDIA_EXTENSIONS } from '../lib/tauri-bridge';
+import { pickFiles, MEDIA_EXTENSIONS } from '../lib/tauri-bridge';
 import { LANGUAGES, OUTPUT_LANGUAGES, DEFAULT_LANGUAGE, DEFAULT_OUTPUT_LANGUAGE } from '../lib/languages';
 
 interface Props {
-  onFileSelected: (filePath: string, fileName: string, language: string, outputLanguage: string) => void;
+  onFilesSelected: (files: {path: string, name: string}[], language: string, outputLanguage: string) => void;
   modelName: string;
   onChangeModel: () => void;
 }
 
-export function DropZone({ onFileSelected, modelName, onChangeModel }: Props) {
+export function DropZone({ onFilesSelected, modelName, onChangeModel }: Props) {
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [outputLanguage, setOutputLanguage] = useState(DEFAULT_OUTPUT_LANGUAGE);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleFile = useCallback((filePath: string) => {
-    const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
-    if (!MEDIA_EXTENSIONS.includes(ext)) return;
-    const name = filePath.split('/').pop() ?? filePath;
-    onFileSelected(filePath, name, language, outputLanguage);
-  }, [language, outputLanguage, onFileSelected]);
+  const handleFiles = useCallback((filePaths: string[]) => {
+    const validFiles = filePaths
+      .filter((p) => {
+        const ext = p.split('.').pop()?.toLowerCase() ?? '';
+        return MEDIA_EXTENSIONS.includes(ext);
+      })
+      .map((p) => ({
+        path: p,
+        name: p.split('/').pop() ?? p,
+      }));
+    if (validFiles.length > 0) {
+      onFilesSelected(validFiles, language, outputLanguage);
+    }
+  }, [language, outputLanguage, onFilesSelected]);
 
   // Tauri native drag-and-drop
   useEffect(() => {
@@ -33,7 +41,7 @@ export function DropZone({ onFileSelected, modelName, onChangeModel }: Props) {
         setIsDragging(false);
         const paths = event.payload.paths;
         if (paths.length > 0) {
-          handleFile(paths[0]);
+          handleFiles(paths);
         }
       }
     });
@@ -41,14 +49,14 @@ export function DropZone({ onFileSelected, modelName, onChangeModel }: Props) {
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, [handleFile]);
+  }, [handleFiles]);
 
   const handlePick = useCallback(async () => {
-    const file = await pickFile();
-    if (file) {
-      onFileSelected(file.path, file.name, language, outputLanguage);
+    const files = await pickFiles();
+    if (files && files.length > 0) {
+      onFilesSelected(files, language, outputLanguage);
     }
-  }, [language, outputLanguage, onFileSelected]);
+  }, [language, outputLanguage, onFilesSelected]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-5 p-8">
@@ -90,10 +98,10 @@ export function DropZone({ onFileSelected, modelName, onChangeModel }: Props) {
         </svg>
         <div className="text-center">
           <p className="text-lg font-medium" style={{ color: '#e2e8f0' }}>
-            {isDragging ? 'Solte o arquivo aqui' : 'Arraste ou clique para selecionar'}
+            {isDragging ? 'Solte os arquivos aqui' : 'Arraste ou clique para selecionar'}
           </p>
           <p className="text-xs mt-1" style={{ color: 'rgba(148, 163, 184, 0.8)' }}>
-            mp3, wav, m4a, flac, ogg, aac, mp4, mov, webm, mkv, avi, m4v, ts
+            Selecione um ou mais arquivos de audio/video
           </p>
         </div>
       </div>
@@ -102,7 +110,7 @@ export function DropZone({ onFileSelected, modelName, onChangeModel }: Props) {
       <div className="flex flex-wrap items-center justify-center gap-4">
         <div className="flex items-center gap-2">
           <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Idioma do áudio:
+            Idioma do audio:
           </label>
           <select
             value={language}
@@ -124,7 +132,7 @@ export function DropZone({ onFileSelected, modelName, onChangeModel }: Props) {
 
         <div className="flex items-center gap-2">
           <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Saída:
+            Saida:
           </label>
           <select
             value={outputLanguage}

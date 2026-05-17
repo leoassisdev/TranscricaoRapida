@@ -30,6 +30,12 @@ pub struct ModelInfo {
     pub downloaded: bool,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct ZipEntry {
+    pub name: String,
+    pub content: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct DownloadProgress {
     pub downloaded_bytes: u64,
