@@ -146,9 +146,13 @@ fn run_whisper(
     let mut full_text = String::new();
 
     for i in 0..n_segments {
-        let text = state
-            .full_get_segment_text(i)
-            .map_err(|e| format!("Erro ao obter segmento: {}", e))?;
+        let text = match state.full_get_segment_text(i) {
+            Ok(t) => t,
+            Err(_) => {
+                // Whisper sometimes produces invalid UTF-8 bytes — skip segment
+                continue;
+            }
+        };
         let start = state
             .full_get_segment_t0(i)
             .map_err(|e| format!("Erro: {}", e))?;
