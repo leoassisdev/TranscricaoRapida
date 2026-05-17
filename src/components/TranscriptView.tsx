@@ -5,10 +5,16 @@ import { copyToClipboard, saveFile } from '../lib/tauri-bridge';
 
 interface Props {
   result: TranscriptionResult;
+  fileName: string;
   onNewTranscription: () => void;
 }
 
-export function TranscriptView({ result, onNewTranscription }: Props) {
+function stripExtension(name: string): string {
+  const lastDot = name.lastIndexOf('.');
+  return lastDot > 0 ? name.substring(0, lastDot) : name;
+}
+
+export function TranscriptView({ result, fileName, onNewTranscription }: Props) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -19,12 +25,12 @@ export function TranscriptView({ result, onNewTranscription }: Props) {
 
   const handleExportTxt = async () => {
     const text = generateTxt(result.segments);
-    await saveFile(text, 'transcricao.txt', 'Texto', ['txt']);
+    await saveFile(text, `${stripExtension(fileName)}.txt`, 'Texto', ['txt']);
   };
 
   const handleExportSrt = async () => {
     const srt = generateSrt(result.segments);
-    await saveFile(srt, 'transcricao.srt', 'Legenda SRT', ['srt']);
+    await saveFile(srt, `${stripExtension(fileName)}.srt`, 'Legenda SRT', ['srt']);
   };
 
   const durationMin = Math.round(result.duration_ms / 60000);

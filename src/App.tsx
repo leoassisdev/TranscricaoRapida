@@ -132,6 +132,7 @@ export default function App() {
         {view === 'result' && result && (
           <TranscriptView
             result={result}
+            fileName={fileName}
             onNewTranscription={handleNewTranscription}
           />
         )}
